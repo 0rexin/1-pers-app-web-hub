@@ -1,0 +1,7 @@
+# private: the brain is its own local repo and never goes to the public one
+brain/
+local/
+.env*
+.envrc
+.DS_Store
+node_modules/

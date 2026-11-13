@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="fannyhub">
+<meta name="theme-color" content="#101110">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
+<title>fannyhub</title>
+<style>
+:root {
+  --bg: #101110; --panel: #181a18; --line: #060706; --text: #e6e8e3; --dim: #8b948d; --faint: #5a625c;
+  --accent: #7fd69b; --warn: #e3b95f; --bad: #e9806f;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+body { font: 15px/1.45 -apple-system, system-ui, "Helvetica Neue", sans-serif; -webkit-text-size-adjust: 100%; display: flex; flex-direction: column; }
+button, input, textarea { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+header { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; border-bottom: 1px solid var(--line); background: var(--panel); min-height: 42px; }
+header .back { color: var(--accent); padding: 4px 8px 4px 0; display: none; }
+header.sub .back { display: block; }
+header h1 { font-size: 15px; margin: 0; font-weight: 650; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+header .note { color: var(--dim); font-size: 12px; white-space: nowrap; }
+
+main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+nav { display: flex; border-top: 1px solid var(--line); background: var(--panel); padding-bottom: env(safe-area-inset-bottom); }
+nav button { flex: 1; padding: 11px 0 10px; color: var(--dim); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+nav button.on { color: var(--accent); }
+
+.row { display: block; width: 100%; text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.row:active { background: var(--panel); }
+.row .top { display: flex; align-items: baseline; gap: 8px; }
+.row .name { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .when { color: var(--dim); font-size: 12px; white-space: nowrap; }
+.row .sub { color: var(--dim); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .files { margin-top: 4px; font: 11.5px/1.5 var(--mono); color: var(--faint); }
+.row .files div { display: flex; gap: 8px; }
+.row .files span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); margin-right: 7px; vertical-align: 1px; flex: none; }
+.dot.live { background: var(--accent); box-shadow: 0 0 0 3px rgba(127, 214, 155, .18); }
+.tag { font-size: 11px; color: var(--dim); border: 1px solid #2a2e2b; border-radius: 3px; padding: 0 4px; white-space: nowrap; }
+.tag.dirty { color: var(--warn); }
+.group { padding: 12px 12px 4px; color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.empty { padding: 28px 16px; color: var(--dim); text-align: center; }
+
+.stream { padding: 8px 12px 24px; }
+.ev { margin: 8px 0; overflow-wrap: anywhere; }
+.ev.you { background: var(--panel); border-left: 2px solid var(--accent); padding: 7px 10px; border-radius: 0 4px 4px 0; white-space: pre-wrap; font-weight: 600; }
+.ev.claude { white-space: pre-wrap; }
+.ev.side { opacity: .6; margin-left: 12px; }
+details.ev { font: 12px/1.45 var(--mono); color: var(--dim); }
+details.ev summary { list-style: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+details.ev summary::-webkit-details-marker { display: none; }
+details.ev summary b { color: var(--accent); font-weight: 600; }
+details.ev.result summary { color: var(--faint); }
+details.ev.err summary { color: var(--bad); }
+details.ev pre { margin: 4px 0 0; padding: 8px; background: #0b0c0b; border: 1px solid var(--line); border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 50vh; overflow: auto; }
+.jump { position: fixed; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 56px); background: var(--accent); color: #08120b; font-weight: 700; font-size: 12px; padding: 7px 11px; border-radius: 4px; display: none; }
+
+.capture { padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+textarea, input[type=search] { width: 100%; background: #0b0c0b; border: 1px solid #2a2e2b; border-radius: 4px; padding: 8px 10px; font-size: 16px; outline: none; -webkit-appearance: none; appearance: none; }
+textarea:focus, input:focus { border-color: var(--accent); }
+.capture textarea { height: 68px; resize: none; display: block; }
+.bar { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.bar input { flex: 1; min-width: 0; }
+.btn { background: var(--accent); color: #08120b; font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 4px; white-space: nowrap; }
+.btn.quiet { background: none; color: var(--accent); border: 1px solid #2a2e2b; }
+.editor { display: flex; flex-direction: column; height: 100%; }
+.editor textarea { flex: 1; border: 0; border-radius: 0; padding: 12px; font: 15px/1.5 var(--mono); resize: none; background: var(--bg); }
+iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--bg); }
+</style>
+</head>
+<body>
+<header id="head"><button class="back" id="back">‹ back</button><h1 id="title">fannyhub</h1><span class="note" id="note"></span></header>
+<main id="main"></main>
+<button class="jump" id="jump">↓ follow</button>
+<nav id="nav">
+  <button data-tab="flow">flow</button>
+  <button data-tab="builds">builds</button>
+  <button data-tab="brain">brain</button>
+  <button data-tab="okapi">okapi</button>
+</nav>
+<script>
+"use strict";
+var $ = function (id) { return document.getElementById(id); };
+var main = $("main"), timer = null, cleanup = null;
+
+function el(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function get(path) {
+  return fetch(path).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function send(method, path, body) {
+  return fetch(path, { method: method, headers: { "content-type": "application/json", "x-hub": "1" }, body: JSON.stringify(body) })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function ago(ms) {
+  var s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 60) return Math.floor(s) + "s";
+  if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) return Math.floor(s / 3600) + "h";
+  return Math.floor(s / 86400) + "d";
+}
+function enc(s) { return encodeURIComponent(s); }
+function go(hash) { location.hash = hash; }
+function head(title, note, sub) {
+  $("title").textContent = title;
+  $("note").textContent = note || "";
+  $("head").className = sub ? "sub" : "";
+}
+// Run fn now and every `ms` while the tab is visible; stopped on every route change.
+function every(ms, fn) {
+  fn();
+  timer = setInterval(function () { if (!document.hidden) fn(); }, ms);
+}
+function row(name, when, sub, live) {
+  var r = el("button", "row"), top = el("div", "top"), n = el("span", "name");
+  if (live !== undefined) n.appendChild(el("span", "dot" + (live ? " live" : "")));
+  n.appendChild(document.createTextNode(name));
+  top.appendChild(n);
+  r.appendChild(top);
+  if (when) top.appendChild(el("span", "when", when));
+  if (sub) r.appendChild(el("div", "sub", sub));
+  return r;
+}
+function fill(nodes, emptyText) {
+  main.textContent = "";
+  if (!nodes.length) main.appendChild(el("div", "empty", emptyText));
+  nodes.forEach(function (n) { main.appendChild(n); });
+}
+
+// ---------- flow ----------
+function flowList() {
+  head("fannyhub", "claude flow");
+  every(3000, function () {
+    get("/api/sessions").then(function (list) {
+      fill(list.map(function (s) {
+        var r = row(s.title || "(untitled session)", ago(s.m), s.cwd, s.live);
+        r.onclick = function () { go("flow/" + enc(s.key) + "/" + enc(s.id)); };
+        return r;
+      }), "No Claude sessions yet.");
+    }).catch(function () {});
+  });
+}
+
+function eventNode(e) {
+  var side = e.sub ? " side" : "";
+  if (e.k === "you" || e.k === "claude") return el("div", "ev " + e.k + side, e.x);
+  var d = el("details", "ev " + e.k + (e.err ? " err" : "") + side), s = el("summary");
+  var first = e.x.split("\n")[0];
+  if (e.k === "tool") { s.appendChild(el("b", "", e.n + " ")); s.appendChild(document.createTextNode(first)); }
+  else s.textContent = (e.err ? "✗ " : "↳ ") + (first || "(no output)");
+  d.appendChild(s);
+  d.appendChild(el("pre", "", e.x));
+  return d;
+}
+
+function flowSession(key, id) {
+  head("…", "", true);
+  var stream = el("div", "stream"), next = null, busy = false, follow = true, jump = $("jump");
+  main.textContent = "";
+  main.appendChild(stream);
+  var atBottom = function () { return main.scrollHeight - main.scrollTop - main.clientHeight < 80; };
+  var onScroll = function () { follow = atBottom(); jump.style.display = follow ? "none" : "block"; };
+  main.addEventListener("scroll", onScroll);
+  jump.onclick = function () { main.scrollTop = main.scrollHeight; };
+  cleanup = function () { main.removeEventListener("scroll", onScroll); jump.style.display = "none"; };
+
+  every(2000, function poll() {
+    if (busy) return;
+    busy = true;
+    get("/api/session?key=" + enc(key) + "&id=" + enc(id) + (next === null ? "" : "&from=" + next)).then(function (d) {
+      busy = false;
+      if (d.fresh) stream.textContent = "";
+      head(d.title || "(untitled session)", d.live ? "● live" : ago(d.m) + " ago", true);
+      next = d.next;
+      d.events.forEach(function (e) { stream.appendChild(eventNode(e)); });
+      while (stream.childNodes.length > 1500) stream.removeChild(stream.firstChild);
+      if (follow && d.events.length) main.scrollTop = main.scrollHeight;
+      if (d.more) poll(); // a long backlog arrives in chunks
+    }).catch(function () { busy = false; });
+  });
+}
+
+// ---------- builds ----------
+function buildsView() {
+  head("fannyhub", "builds");
+  every(4000, function () {
+    get("/api/builds").then(function (list) {
+      var open = {};
+      main.querySelectorAll(".row[data-open]").forEach(function (r) { open[r.dataset.name] = 1; });
+      fill(list.map(function (b) {
+        var sub = b.git ? (b.git.subject || "no commits yet") : (b.kind === "sandbox" ? "sandbox · no git" : "no git");
+        var r = row(b.name, ago(b.last), sub, b.live);
+        r.dataset.name = b.name;
+        if (b.git) {
+          var top = r.firstChild;
+          top.insertBefore(el("span", "tag", b.git.branch || "?"), top.lastChild);
+          if (b.git.dirty) top.insertBefore(el("span", "tag dirty", "±" + b.git.dirty), top.lastChild);
+        }
+        var files = el("div", "files");
+        b.files.forEach(function (f) {
+          var line = el("div");
+          line.appendChild(el("span", "", f.p));
+          line.appendChild(el("span", "", ago(f.m)));
+          files.appendChild(line);
+        });
+        var show = function (on) { files.style.display = on ? "" : "none"; if (on) r.dataset.open = "1"; else delete r.dataset.open; };
+        show(b.live || open[b.name]);
+        r.appendChild(files);
+        r.onclick = function () { show(files.style.display === "none"); };
+        return r;
+      }), "Nothing in ~/Developer yet.");
+    }).catch(function () {});
+  });
+}
+
+// ---------- brain ----------
+function brainView() {
+  head("fannyhub", "brain");
+  main.textContent = "";
+  var cap = el("div", "capture"), ta = el("textarea"), bar = el("div", "bar");
+  var q = el("input"), save = el("button", "btn", "scribble"), add = el("button", "btn quiet", "+ note");
+  ta.placeholder = "Scribble… lands in brain/inbox";
+  q.type = "search"; q.placeholder = "search";
+  bar.appendChild(q); bar.appendChild(add); bar.appendChild(save);
+  cap.appendChild(ta); cap.appendChild(bar);
+  var list = el("div");
+  main.appendChild(cap); main.appendChild(list);
+
+  var open = function (f) { go("brain/" + f.root + "/" + f.p.split("/").map(enc).join("/")); };
+  var show = function (files) {
+    list.textContent = "";
+    if (!files.length) return list.appendChild(el("div", "empty", "Empty. Scribble something, or run `just init`."));
+    var last = null;
+    files.forEach(function (f) {
+      var parts = f.p.split("/");
+      var group = f.root === "okapi" ? "okapi · " + parts[0] : (parts.length > 1 ? parts[0] : "brain");
+      if (group !== last) { list.appendChild(el("div", "group", group)); last = group; }
+      var r = row(parts.slice(group === "brain" ? 0 : 1).join("/"), ago(f.m));
+      r.onclick = function () { open(f); };
+      list.appendChild(r);
+    });
+  };
+  var load = function () {
+    get("/api/files").then(function (files) {
+      var order = [];
+      var by = {};
+      files.forEach(function (f) { // newest group first, newest file first within it
+        var parts = f.p.split("/"), g = f.root + "/" + (parts.length > 1 || f.root === "okapi" ? parts[0] : "");
+        if (!by[g]) { by[g] = []; order.push(g); }
+        by[g].push(f);
+      });
+      show(order.reduce(function (all, g) { return all.concat(by[g]); }, []));
+    }).catch(function () {});
+  };
+  save.onclick = function () {
+    if (!ta.value.trim()) return;
+    save.disabled = true;
+    send("POST", "/api/scribble", { text: ta.value }).then(function () { ta.value = ""; save.textContent = "saved ✓"; load(); })
+      .catch(function () { save.textContent = "failed ✗"; })
+      .then(function () { save.disabled = false; setTimeout(function () { save.textContent = "scribble"; }, 1500); });
+  };
+  add.onclick = function () {
+    var name = prompt("Note name");
+    if (!name || !name.trim()) return;
+    var slug = name.trim().toLowerCase().replace(/[^a-z0-9åäö]+/g, "-").replace(/^-+|-+$/g, "") || "note";
+    send("PUT", "/api/file?root=brain&p=" + enc("notes/" + slug + ".md"), { text: "# " + name.trim() + "\n\n" })
+      .then(function (d) { open(d); }).catch(function () { alert("Could not create the note."); });
+  };
+  var wait = null;
+  q.oninput = function () {
+    clearTimeout(wait);
+    wait = setTimeout(function () {
+      var term = q.value.trim();
+      if (term.length < 2) return load();
+      get("/api/search?q=" + enc(term)).then(function (hits) {
+        list.textContent = "";
+        if (!hits.length) list.appendChild(el("div", "empty", "No hits."));
+        hits.forEach(function (h) {
+          var r = row(h.p, h.n ? "line " + h.n : "name", h.line || (h.root === "okapi" ? "okapi" : "brain"));
+          r.onclick = function () { open(h); };
+          list.appendChild(r);
+        });
+      }).catch(function () {});
+    }, 250);
+  };
+  load();
+}
+
+function brainFile(root, p) {
+  head(p, "", true);
+  var box = el("div", "editor"), ta = el("textarea");
+  ta.spellcheck = false;
+  box.appendChild(ta);
+  main.textContent = "";
+  main.appendChild(box);
+  var url = "/api/file?root=" + enc(root) + "&p=" + enc(p), wait = null, dirty = false;
+  var flush = function () {
+    clearTimeout(wait);
+    if (!dirty) return;
+    dirty = false;
+    $("note").textContent = "saving…";
+    send("PUT", url, { text: ta.value }).then(function () { $("note").textContent = "saved ✓"; })
+      .catch(function () { dirty = true; $("note").textContent = "not saved ✗"; });
+  };
+  get(url).then(function (d) {
+    ta.value = d.text;
+    ta.oninput = function () { dirty = true; $("note").textContent = "…"; clearTimeout(wait); wait = setTimeout(flush, 600); };
+  }).catch(function () { ta.value = ""; ta.disabled = true; $("note").textContent = "not found"; });
+  cleanup = flush;
+}
+
+// ---------- okapi ----------
+function okapiView() {
+  head("fannyhub", "okapi");
+  var f = el("iframe");
+  f.src = "/okapi/";
+  main.textContent = "";
+  main.appendChild(f);
+}
+
+// ---------- router ----------
+function route() {
+  if (timer) { clearInterval(timer); timer = null; }
+  if (cleanup) { cleanup(); cleanup = null; }
+  main.scrollTop = 0;
+  var parts = location.hash.replace(/^#/, "").split("/").map(decodeURIComponent);
+  var tab = ["flow", "builds", "brain", "okapi"].indexOf(parts[0]) < 0 ? "flow" : parts[0];
+  document.querySelectorAll("#nav button").forEach(function (b) { b.className = b.dataset.tab === tab ? "on" : ""; });
+  if (tab === "flow") return parts[2] ? flowSession(parts[1], parts[2]) : flowList();
+  if (tab === "builds") return buildsView();
+  if (tab === "brain") return parts[2] ? brainFile(parts[1], parts.slice(2).join("/")) : brainView();
+  okapiView();
+}
+document.querySelectorAll("#nav button").forEach(function (b) { b.onclick = function () { go(b.dataset.tab); }; });
+$("back").onclick = function () { go(location.hash.replace(/^#/, "").split("/")[0]); };
+window.addEventListener("hashchange", route);
+window.addEventListener("pagehide", function () { if (cleanup) cleanup(); });
+route();
+</script>
+</body>
+</html>
