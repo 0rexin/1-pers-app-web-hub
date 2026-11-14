@@ -328,6 +328,20 @@ function okapiView() {
   f.src = "/okapi/";
   main.textContent = "";
   main.appendChild(f);
+  // Okapi's panel is laid out 500px wide; shrink it to fit a narrower screen.
+  function fit() {
+    var k = Math.min(1, main.clientWidth / 500);
+    f.style.width = k < 1 ? "500px" : "100%";
+    f.style.height = main.clientHeight / k + "px";
+    f.style.transformOrigin = "0 0";
+    f.style.transform = k < 1 ? "scale(" + k + ")" : "";
+    // a transform leaves the layout box full size; pull it back so nothing scrolls
+    f.style.marginRight = k < 1 ? main.clientWidth - 500 + "px" : "";
+    f.style.marginBottom = main.clientHeight - main.clientHeight / k + "px";
+  }
+  fit();
+  window.addEventListener("resize", fit);
+  cleanup = function () { window.removeEventListener("resize", fit); };
 }
 
 // ---------- router ----------
