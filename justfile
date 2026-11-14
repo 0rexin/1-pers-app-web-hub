@@ -46,7 +46,7 @@ off:
 
 # the address to open on the phone
 url:
-    @"{{ts}}" status --json | jq -r '"http://" + (.Self.DNSName | split(".")[0]) + "/   (or http://" + .Self.TailscaleIPs[0] + "/)"'
+    @"{{ts}}" status --json | jq -r '"http://" + (.Self.DNSName | split(".")[0]) + "/"'
 
 test:
     bun test
